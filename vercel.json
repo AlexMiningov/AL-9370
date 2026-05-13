@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd packages/web && bun install && bun run build",
+  "buildCommand": "cd packages/web && bun run build",
   "outputDirectory": "packages/web/dist",
+  "installCommand": "cd packages/web && bun install",
   "framework": null,
-  "installCommand": "bun install",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/index.html" }
