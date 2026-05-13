@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type NavItem = { label: string; href: string };
@@ -16,68 +16,33 @@ const S = {
   offWhite: "#e8e6e3",
   white: "#ffffff",
   black: "#000000",
+  accent: "#F5A623",
   fontMain: "var(--font-pragmatica, 'Pragmatica', Arial, sans-serif)",
   fontCond: "var(--font-pragmatica-condensed, 'PragmaticaCondensed', Arial, sans-serif)",
 } as const;
 
-// ─── Crypto Ticker ────────────────────────────────────────────────────────────
-type CoinData = { symbol: string; price: number; change: number };
-
-const COINS = ["bitcoin", "ethereum", "tether", "binancecoin", "solana", "ripple", "cardano", "dogecoin", "tron", "avalanche-2"];
-const COIN_SYMBOLS: Record<string, string> = {
-  bitcoin: "BTC",
-  ethereum: "ETH",
-  tether: "USDT",
-  binancecoin: "BNB",
-  solana: "SOL",
-  ripple: "XRP",
-  cardano: "ADA",
-  dogecoin: "DOGE",
-  tron: "TRX",
-  "avalanche-2": "AVAX",
-};
+// ─── Status Ticker ────────────────────────────────────────────────────────────
+const TICKER_FACTS = [
+  "ПРИНИМАЮ ПРОЕКТЫ",
+  "8 ЛЕТ ОПЫТА",
+  "50+ КЛИЕНТОВ",
+  "ОТВЕЧУ ЗА 2 ЧАСА",
+  "ЗАПУСК ЗА 1–3 ДНЯ",
+  "БЕСПЛАТНЫЙ РАСЧЁТ ROI",
+  "МАЙНИНГ ПОД КЛЮЧ",
+  "ДОХОД С ПЕРВОГО ДНЯ",
+];
 
 function CryptoTicker() {
-  const [coins, setCoins] = useState<CoinData[]>([]);
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  const fetchPrices = useCallback(async () => {
-    try {
-      const ids = COINS.join(",");
-      const res = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      const parsed: CoinData[] = COINS.map((id) => ({
-        symbol: COIN_SYMBOLS[id],
-        price: data[id]?.usd ?? 0,
-        change: data[id]?.usd_24h_change ?? 0,
-      })).filter((c) => c.price > 0);
-      setCoins(parsed);
-    } catch {
-      // silently fail
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchPrices]);
-
-  if (coins.length === 0) return null;
-
-  const items = [...coins, ...coins]; // duplicate for seamless loop
-
+  const items = [...TICKER_FACTS, ...TICKER_FACTS];
   return (
     <div
       style={{
         width: "100%",
-        background: "#111",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: "#0a0a0a",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
         overflow: "hidden",
-        height: "32px",
+        height: "30px",
         display: "flex",
         alignItems: "center",
         position: "relative",
@@ -92,46 +57,28 @@ function CryptoTicker() {
         .ticker-track {
           display: flex;
           align-items: center;
-          animation: tickerScroll ${Math.max(coins.length * 4, 30)}s linear infinite;
+          animation: tickerScroll 28s linear infinite;
           white-space: nowrap;
           will-change: transform;
         }
-        .ticker-track:hover {
-          animation-play-state: paused;
-        }
       `}</style>
-      <div className="ticker-track" ref={trackRef}>
-        {items.map((coin, i) => (
+      <div className="ticker-track">
+        {items.map((fact, i) => (
           <span
-            key={`${coin.symbol}-${i}`}
+            key={i}
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "6px",
-              padding: "0 24px",
+              gap: "16px",
+              padding: "0 20px",
               fontFamily: S.fontMain,
-              fontSize: "10px",
-              letterSpacing: "0.06em",
-              color: "rgba(232,230,227,0.9)",
-              borderRight: "1px solid rgba(255,255,255,0.07)",
+              fontSize: "9px",
+              letterSpacing: "0.1em",
+              color: "rgba(232,230,227,0.35)",
             }}
           >
-            <span style={{ fontWeight: 700, color: S.offWhite }}>{coin.symbol}</span>
-            <span>
-              ${coin.price >= 1000
-                ? coin.price.toLocaleString("en-US", { maximumFractionDigits: 0 })
-                : coin.price >= 1
-                ? coin.price.toLocaleString("en-US", { maximumFractionDigits: 2 })
-                : coin.price.toLocaleString("en-US", { maximumFractionDigits: 5 })}
-            </span>
-            <span
-              style={{
-                color: coin.change >= 0 ? "#4ade80" : "#f87171",
-                fontSize: "9px",
-              }}
-            >
-              {coin.change >= 0 ? "▲" : "▼"} {Math.abs(coin.change).toFixed(2)}%
-            </span>
+            {fact}
+            <span style={{ color: "#F5A623", fontSize: "6px" }}>◆</span>
           </span>
         ))}
       </div>
@@ -430,40 +377,72 @@ function Hero() {
           ))}
         </div>
 
-        {/* Big headline */}
-        <div style={{ gridColumn: "1 / -1" }}>
-          <h1
+        {/* Big headline + visual split */}
+        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr auto", gap: "40px", alignItems: "flex-end" }}>
+          <div>
+            <h1
+              style={{
+                fontFamily: S.fontMain,
+                fontSize: "clamp(56px, 9vw, 120px)",
+                fontWeight: 500,
+                lineHeight: "90%",
+                letterSpacing: "-0.023em",
+                textTransform: "uppercase",
+                color: S.offWhite,
+                margin: 0,
+              }}
+            >
+              ПРЕВРАЩУ ВАШ
+              <br />
+              КАПИТАЛ В{" "}
+              <span style={{ color: S.accent }}>ХЭШРЕЙТ</span>
+            </h1>
+            <p
+              style={{
+                fontFamily: S.fontMain,
+                fontSize: "10px",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                color: S.offWhite,
+                opacity: 0.5,
+                marginTop: "20px",
+                maxWidth: "400px",
+                lineHeight: 1.8,
+              }}
+            >
+              8 лет практики. Запускаю, масштабирую и оптимизирую майнинг —
+              от первой фермы до полноценной инфраструктуры.
+            </p>
+          </div>
+
+          {/* Mining rig visual */}
+          <div
             style={{
-              fontFamily: S.fontMain,
-              fontSize: "clamp(56px, 9vw, 120px)",
-              fontWeight: 500,
-              lineHeight: "90%",
-              letterSpacing: "-0.023em",
-              textTransform: "uppercase",
-              color: S.offWhite,
-              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              opacity: 0.15,
+              alignSelf: "center",
+              flexShrink: 0,
             }}
           >
-            ПРЕВРАЩУ ВАШ
-            <br />
-            КАПИТАЛ В ХЭШРЕЙТ
-          </h1>
-          <p
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "10px",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              color: S.offWhite,
-              opacity: 0.5,
-              marginTop: "20px",
-              maxWidth: "400px",
-              lineHeight: 1.8,
-            }}
-          >
-            8 лет практики. Запускаю, масштабирую и оптимизирую майнинг —
-            от первой фермы до полноценной инфраструктуры.
-          </p>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                <div style={{ width: "48px", height: "14px", border: "1px solid #fff", borderRadius: "2px", position: "relative", overflow: "hidden" }}>
+                  <div style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0,
+                    width: `${55 + (i * 7) % 40}%`,
+                    background: S.accent,
+                    opacity: 0.6,
+                  }} />
+                </div>
+                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: i % 3 === 0 ? S.accent : "#fff", opacity: 0.8 }} />
+              </div>
+            ))}
+            <div style={{ fontFamily: S.fontMain, fontSize: "8px", letterSpacing: "0.1em", color: "#fff", opacity: 0.6, marginTop: "4px" }}>
+              HASHRATE ████████░░ 84%
+            </div>
+          </div>
         </div>
 
         {/* CTAs */}
@@ -486,11 +465,12 @@ function Hero() {
               letterSpacing: "0.05em",
               textTransform: "uppercase",
               color: "#000",
-              background: S.offWhite,
-              padding: "12px 24px",
+              background: S.accent,
+              padding: "12px 28px",
               textDecoration: "none",
               transition: "opacity 0.2s",
               display: "inline-block",
+              fontWeight: 500,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
@@ -615,14 +595,14 @@ function Stats() {
 // ─── About / Why me ───────────────────────────────────────────────────────────
 function About() {
   const items = [
-    ["01", "ПОДБОР ОБОРУДОВАНИЯ", "Получите майнер с реальной окупаемостью — без переплаты и ошибок новичка."],
-    ["02", "РАСЧЁТ ДОХОДНОСТИ", "Узнаете точную прибыль до покупки — с учётом курса, сложности и вашего тарифа."],
-    ["03", "НАСТРОЙКА И ЗАПУСК", "Ферма запускается за 1–3 дня и с первого дня приносит доход."],
-    ["04", "ОПТИМИЗАЦИЯ ЗАТРАТ", "Снизите расходы на электричество на 15–30% без потери мощности."],
-    ["05", "МАСШТАБИРОВАНИЕ", "Вырастете от одного ASIC до промышленной фермы по чёткому плану."],
-    ["06", "УДАЛЁННОЕ УПРАВЛЕНИЕ", "Ферма работает сама — вы видите статус и доход из любой точки мира."],
-    ["07", "ПОДБОР ПОМЕЩЕНИЙ", "Найдёте площадку с низким тарифом и правильным охлаждением с первого раза."],
-    ["08", "ИНВЕСТИЦИОННАЯ СТРАТЕГИЯ", "Войдёте в рынок в правильный момент и избежите типичных потерь."],
+    ["01", "ПОДБОР ОБОРУДОВАНИЯ", "Получите майнер с реальной окупаемостью — без переплаты и ошибок новичка.", "M9 3H15M9 3C9 3 3 5 3 12C3 19 9 21 12 21C15 21 21 19 21 12C21 5 15 3 15 3M9 3C9 3 12 5 12 12M15 3C15 3 12 5 12 12M12 12V21"],
+    ["02", "РАСЧЁТ ДОХОДНОСТИ", "Узнаете точную прибыль до покупки — с учётом курса, сложности и вашего тарифа.", "M9 19V13M12 19V7M15 19V11M5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3Z"],
+    ["03", "НАСТРОЙКА И ЗАПУСК", "Ферма запускается за 1–3 дня и с первого дня приносит доход.", "M13 10V3L4 14H11V21L20 10H13Z"],
+    ["04", "ОПТИМИЗАЦИЯ ЗАТРАТ", "Снизите расходы на электричество на 15–30% без потери мощности.", "M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93"],
+    ["05", "МАСШТАБИРОВАНИЕ", "Вырастете от одного ASIC до промышленной фермы по чёткому плану.", "M2 20H22M4 20V10L12 4L20 10V20M10 20V14H14V20"],
+    ["06", "УДАЛЁННОЕ УПРАВЛЕНИЕ", "Ферма работает сама — вы видите статус и доход из любой точки мира.", "M1.42 9C5.06 5.36 10.24 3.5 12 3.5C13.76 3.5 18.94 5.36 22.58 9M5.41 13C7.74 10.67 10.25 9.5 12 9.5C13.75 9.5 16.26 10.67 18.59 13M12 17.5H12.01M9 21L12 17.5L15 21"],
+    ["07", "ПОДБОР ПОМЕЩЕНИЙ", "Найдёте площадку с низким тарифом и правильным охлаждением с первого раза.", "M3 9L12 2L21 9V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9Z"],
+    ["08", "ИНВЕСТИЦИОННАЯ СТРАТЕГИЯ", "Войдёте в рынок в правильный момент и избежите типичных потерь.", "M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"],
   ];
 
   return (
@@ -679,16 +659,17 @@ function About() {
 
       {/* Items list */}
       <div style={{ padding: "0 10px" }}>
-        {items.map(([num, title, desc]) => (
+        {items.map(([num, title, desc, iconPath]) => (
           <div
             key={num}
             style={{
               display: "grid",
-              gridTemplateColumns: "50px 1fr 1fr",
+              gridTemplateColumns: "36px 36px 1fr 1fr",
               columnGap: "10px",
               padding: "20px 0",
               borderTop: "1px solid rgba(255,255,255,0.08)",
-              alignItems: "start",
+              alignItems: "center",
+              transition: "opacity 0.2s",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
@@ -699,11 +680,13 @@ function About() {
                 fontSize: "10px",
                 letterSpacing: "0.05em",
                 opacity: 0.3,
-                paddingTop: "2px",
               }}
             >
               {num}
             </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={S.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.8, flexShrink: 0 }}>
+              <path d={iconPath} />
+            </svg>
             <span
               style={{
                 fontFamily: S.fontCond,
