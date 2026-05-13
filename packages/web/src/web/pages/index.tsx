@@ -1122,7 +1122,7 @@ function Contact() {
                 maxWidth: "280px",
               }}
             >
-              НАПИШИТЕ МНЕ НАПРЯМУЮ ИЛИ ЗАПОЛНИТЕ ФОРМУ. ОТВЕЧАЮ В ТЕЧЕНИЕ 24 ЧАСОВ.
+              НАПИШИТЕ МНЕ НАПРЯМУЮ ИЛИ ЗАПОЛНИТЕ ФОРМУ — ОТВЕЧУ ЛИЧНО В ТЕЧЕНИЕ 2 ЧАСОВ.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <a
@@ -1163,8 +1163,8 @@ function Contact() {
                 lineHeight: 1.8,
               }}
             >
-              <div style={{ marginBottom: "8px" }}>ЗАПРОС ПОЛУЧЕН.</div>
-              <div style={{ opacity: 0.4 }}>АЛЕКСАНДР СВЯЖЕТСЯ С ВАМИ СКОРО.</div>
+              <div style={{ marginBottom: "8px" }}>ЗАЯВКА ПОЛУЧЕНА.</div>
+              <div style={{ opacity: 0.4 }}>ОТВЕЧУ ЛИЧНО В ТЕЧЕНИЕ 2 ЧАСОВ.<br />УЖЕ В ПЕРЕПИСКЕ БЕСПЛАТНО ПОСЧИТАЮ ROI ВАШЕЙ ИДЕИ.</div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -1278,6 +1278,19 @@ function Contact() {
                     ОШИБКА. НАПИШИТЕ НАПРЯМУЮ В TELEGRAM.
                   </p>
                 )}
+                <p
+                  style={{
+                    fontFamily: S.fontMain,
+                    fontSize: "10px",
+                    letterSpacing: "0.05em",
+                    opacity: 0.4,
+                    marginTop: "16px",
+                    lineHeight: 1.8,
+                    maxWidth: "280px",
+                  }}
+                >
+                  ОТВЕЧУ ЛИЧНО В ТЕЧЕНИЕ 2 ЧАСОВ — И БЕСПЛАТНО ПОСЧИТАЮ ROI ВАШЕЙ ИДЕИ ПРЯМО В ПЕРЕПИСКЕ.
+                </p>
               </div>
             </form>
           )}
