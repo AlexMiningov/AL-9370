@@ -1,84 +1,156 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type NavItem = { label: string; href: string };
+// ─── Config ───────────────────────────────────────────────────────────────────
+const TG_URL =
+  "https://t.me/Alex_mimingov?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%2C%20%D1%85%D0%BE%D1%87%D1%83%20%D0%BF%D0%BE%D0%BB%D1%83%D1%87%D0%B8%D1%82%D1%8C%20%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%BC%D0%B0%D0%B9%D0%BD%D0%B8%D0%BD%D0%B3%D1%83";
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "УСЛУГИ", href: "#services" },
-  { label: "ЦЕНЫ", href: "#prices" },
-  { label: "КОНТАКТ", href: "#contact" },
-];
-
-const TG_URL = "https://t.me/Alex_mimingov?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%2C%20%D1%85%D0%BE%D1%87%D1%83%20%D0%BF%D0%BE%D0%BB%D1%83%D1%87%D0%B8%D1%82%D1%8C%20%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%BC%D0%B0%D0%B9%D0%BD%D0%B8%D0%BD%D0%B3%D1%83";
-
-// ─── Shared styles ────────────────────────────────────────────────────────────
-const S = {
-  offWhite: "#e8e6e3",
+// ─── Design tokens (Mitra-inspired) ──────────────────────────────────────────
+const T = {
+  bg: "#19181a",
+  bgCard: "#1f1e21",
+  bgCardHover: "#242325",
+  border: "rgba(255,255,255,0.07)",
+  cream: "#ffeadf",       // warm peach accent (Mitra's #ffeadf)
+  creamDim: "#c5afa5",
   white: "#ffffff",
-  black: "#000000",
-  accent: "#F5A623",
-  fontMain: "var(--font-pragmatica, 'Pragmatica', Arial, sans-serif)",
-  fontCond: "var(--font-pragmatica-condensed, 'PragmaticaCondensed', Arial, sans-serif)",
+  muted: "rgba(255,255,255,0.38)",
+  font: "'Instrument Sans', 'Inter', system-ui, sans-serif",
 } as const;
 
-// ─── Status Ticker ────────────────────────────────────────────────────────────
-const TICKER_FACTS = [
+// ─── Global styles injected once ──────────────────────────────────────────────
+const GLOBAL_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: ${T.bg}; color: ${T.white}; font-family: ${T.font}; -webkit-font-smoothing: antialiased; }
+
+  ::selection { background: ${T.cream}; color: #000; }
+
+  @keyframes ticker {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  .fade-up { animation: fadeUp 0.8s ease both; }
+  .fade-up-1 { animation-delay: 0.1s; }
+  .fade-up-2 { animation-delay: 0.22s; }
+  .fade-up-3 { animation-delay: 0.34s; }
+  .fade-up-4 { animation-delay: 0.46s; }
+
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-family: ${T.font};
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+  }
+  .pill-btn:hover { transform: scale(1.03); opacity: 0.92; }
+  .pill-btn:active { transform: scale(0.98); }
+
+  .pill-btn-primary { background: ${T.cream}; color: #111; }
+  .pill-btn-ghost   { background: rgba(255,255,255,0.09); color: ${T.white}; }
+
+  .card {
+    background: ${T.bgCard};
+    border-radius: 16px;
+    border: 1px solid ${T.border};
+    transition: background 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
+  }
+  .card:hover {
+    background: ${T.bgCardHover};
+    border-color: rgba(255,255,255,0.14);
+  }
+
+  .nav-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.65);
+    text-decoration: none;
+    transition: color 0.18s;
+  }
+  .nav-link:hover { color: #fff; }
+
+  input, textarea {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid ${T.border};
+    border-radius: 12px;
+    color: ${T.white};
+    font-family: ${T.font};
+    font-size: 15px;
+    padding: 14px 18px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.18s;
+    -webkit-appearance: none;
+  }
+  input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.28); }
+  input:focus, textarea:focus { border-color: rgba(255,255,255,0.3); }
+
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr !important; }
+    .four-col { grid-template-columns: 1fr 1fr !important; }
+    .hide-mobile { display: none !important; }
+    .hero-h1 { font-size: clamp(42px, 11vw, 80px) !important; }
+  }
+`;
+
+// ─── Ticker ────────────────────────────────────────────────────────────────────
+const FACTS = [
   "ПРИНИМАЮ ПРОЕКТЫ",
   "8 ЛЕТ ОПЫТА",
   "50+ КЛИЕНТОВ",
-  "ОТВЕЧУ ЗА 2 ЧАСА",
   "ЗАПУСК ЗА 1–3 ДНЯ",
+  "ОТВЕЧУ ЗА 2 ЧАСА",
   "БЕСПЛАТНЫЙ РАСЧЁТ ROI",
   "МАЙНИНГ ПОД КЛЮЧ",
   "ДОХОД С ПЕРВОГО ДНЯ",
 ];
 
-function CryptoTicker() {
-  const items = [...TICKER_FACTS, ...TICKER_FACTS];
+function Ticker() {
+  const items = [...FACTS, ...FACTS];
   return (
-    <div
-      style={{
-        width: "100%",
-        background: "#0a0a0a",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        overflow: "hidden",
-        height: "30px",
-        display: "flex",
-        alignItems: "center",
-        position: "relative",
-        zIndex: 99,
-      }}
-    >
-      <style>{`
-        @keyframes tickerScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .ticker-track {
-          display: flex;
-          align-items: center;
-          animation: tickerScroll 28s linear infinite;
-          white-space: nowrap;
-          will-change: transform;
-        }
-      `}</style>
-      <div className="ticker-track">
-        {items.map((fact, i) => (
+    <div style={{ overflow: "hidden", borderBottom: `1px solid ${T.border}`, height: 36, display: "flex", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          animation: "ticker 30s linear infinite",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {items.map((f, i) => (
           <span
             key={i}
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "16px",
-              padding: "0 20px",
-              fontFamily: S.fontMain,
-              fontSize: "9px",
-              letterSpacing: "0.1em",
-              color: "rgba(232,230,227,0.35)",
+              gap: 14,
+              padding: "0 24px",
+              fontFamily: T.font,
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: T.muted,
             }}
           >
-            {fact}
-            <span style={{ color: "#F5A623", fontSize: "6px" }}>◆</span>
+            {f}
+            <span style={{ color: T.cream, fontSize: 8 }}>◆</span>
           </span>
         ))}
       </div>
@@ -86,181 +158,102 @@ function CryptoTicker() {
   );
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── Header ────────────────────────────────────────────────────────────────────
 function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    const fn = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const close = () => setOpen(false);
+  const navLinks = [
+    { label: "Услуги", href: "#services" },
+    { label: "Цены", href: "#prices" },
+    { label: "Контакт", href: "#contact" },
+  ];
 
   return (
-    <>
-      <header
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        background: scrolled ? "rgba(25,24,26,0.88)" : "transparent",
+        backdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: `1px solid ${scrolled ? T.border : "transparent"}`,
+        transition: "all 0.3s ease",
+      }}
+    >
+      <div
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-          width: "100%",
+          maxWidth: 1160,
+          margin: "0 auto",
+          padding: "0 24px",
+          height: 64,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 20px",
-          height: "50px",
-          background: scrolled || open ? "rgba(0,0,0,0.96)" : "#000",
-          backdropFilter: "blur(10px)",
-          borderBottom: `1px solid rgba(255,255,255,${scrolled ? "0.1" : "0"})`,
-          transition: "border-color 0.3s",
         }}
       >
-        {/* Logo / Name */}
-        <a
-          href="/"
-          style={{
-            fontFamily: S.fontMain,
-            fontSize: "10px",
-            letterSpacing: "0.05em",
-            fontWeight: 400,
-            color: S.offWhite,
-            textTransform: "uppercase",
-            textDecoration: "none",
-          }}
-        >
-          ЛЕЛИКОВ АЛЕКСАНДР
+        {/* Logo */}
+        <a href="#" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: T.cream,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span style={{ color: "#111", fontSize: 14, fontWeight: 700, fontFamily: T.font }}>A</span>
+          </div>
+          <span style={{ fontFamily: T.font, fontWeight: 600, fontSize: 15, color: T.white }}>Леликов</span>
         </a>
 
         {/* Desktop nav */}
-        <nav
-          style={{
-            display: "flex",
-            gap: "30px",
-            alignItems: "center",
-          }}
-        >
-          {NAV_ITEMS.map((n) => (
-            <a
-              key={n.label}
-              href={n.href}
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                color: S.offWhite,
-                textTransform: "uppercase",
-                textDecoration: "none",
-                opacity: 0.6,
-                transition: "opacity 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
-            >
-              {n.label}
-            </a>
+        <nav style={{ display: "flex", alignItems: "center", gap: 32 }} className="hide-mobile">
+          {navLinks.map((n) => (
+            <a key={n.href} href={n.href} className="nav-link">{n.label}</a>
           ))}
-          <a
-            href={TG_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "10px",
-              letterSpacing: "0.05em",
-              color: S.white,
-              textTransform: "uppercase",
-              textDecoration: "none",
-              border: "1px solid rgba(255,255,255,0.3)",
-              padding: "6px 12px",
-              transition: "border-color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.8)")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)")}
-          >
-            TELEGRAM
-          </a>
         </nav>
+
+        {/* CTA */}
+        <a href={TG_URL} target="_blank" rel="noopener noreferrer" className="pill-btn pill-btn-primary hide-mobile" style={{ padding: "10px 22px", fontSize: 14 }}>
+          Написать в Telegram
+        </a>
 
         {/* Burger */}
         <button
           onClick={() => setOpen(!open)}
-          style={{
-            width: "50px",
-            height: "50px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "5px",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-          }}
+          style={{ background: "none", border: "none", color: T.white, cursor: "pointer", padding: 4, display: "none" }}
+          className="show-mobile"
           aria-label="Menu"
         >
-          <span
-            style={{
-              display: "block",
-              width: "16px",
-              height: "1px",
-              background: "#fff",
-              transform: open ? "translateY(3px) rotate(45deg)" : "translateY(-2px)",
-              transition: "transform 0.5s cubic-bezier(0.33,1,0.68,1)",
-              transformOrigin: "50%",
-            }}
-          />
-          <span
-            style={{
-              display: "block",
-              width: "16px",
-              height: "1px",
-              background: "#fff",
-              transform: open ? "translateY(-3px) rotate(-45deg)" : "translateY(2px)",
-              transition: "transform 0.5s cubic-bezier(0.33,1,0.68,1)",
-              transformOrigin: "50%",
-            }}
-          />
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            {open
+              ? <><line x1={18} y1={6} x2={6} y2={18} /><line x1={6} y1={6} x2={18} y2={18} /></>
+              : <><line x1={3} y1={7} x2={21} y2={7} /><line x1={3} y1={12} x2={21} y2={12} /><line x1={3} y1={17} x2={21} y2={17} /></>
+            }
+          </svg>
         </button>
-      </header>
+      </div>
 
-      {/* Mobile / fullscreen menu */}
+      {/* Mobile menu */}
       {open && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 99,
-            background: "#000",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "80px 20px 40px",
-          }}
-        >
-          {NAV_ITEMS.map((n, i) => (
+        <div style={{ background: T.bg, borderTop: `1px solid ${T.border}`, padding: "20px 24px 28px" }}>
+          {navLinks.map((n) => (
             <a
-              key={n.label}
+              key={n.href}
               href={n.href}
-              onClick={close}
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "clamp(32px, 6vw, 60px)",
-                fontWeight: 500,
-                letterSpacing: "-0.023em",
-                lineHeight: "90%",
-                color: S.offWhite,
-                textTransform: "uppercase",
-                textDecoration: "none",
-                padding: "16px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                opacity: 0,
-                animation: `fadeUp 0.4s ease forwards`,
-                animationDelay: `${i * 0.08}s`,
-              }}
+              className="nav-link"
+              style={{ display: "block", padding: "12px 0", fontSize: 18, borderBottom: `1px solid ${T.border}` }}
+              onClick={() => setOpen(false)}
             >
               {n.label}
             </a>
@@ -269,653 +262,290 @@ function Header() {
             href={TG_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={close}
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "clamp(32px, 6vw, 60px)",
-              fontWeight: 500,
-              letterSpacing: "-0.023em",
-              lineHeight: "90%",
-              color: S.offWhite,
-              textTransform: "uppercase",
-              textDecoration: "none",
-              padding: "16px 0",
-              opacity: 0,
-              animation: `fadeUp 0.4s ease forwards`,
-              animationDelay: `${NAV_ITEMS.length * 0.08}s`,
-            }}
+            className="pill-btn pill-btn-primary"
+            style={{ marginTop: 24, width: "100%", justifyContent: "center" }}
+            onClick={() => setOpen(false)}
           >
-            TELEGRAM
+            Написать в Telegram
           </a>
         </div>
       )}
-    </>
+    </header>
   );
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
+// ─── Hero ──────────────────────────────────────────────────────────────────────
 function Hero() {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const t = setInterval(() => setTick((x) => x + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
-  const rows = [
-    ["СПЕЦИАЛИЗАЦИЯ:", "МАЙНИНГ / КРИПТО-ИНФРАСТРУКТУРА"],
-    ["СТАТУС:", "ОНЛАЙН · ПРИНИМАЮ ПРОЕКТЫ"],
-    ["ОПЫТ:", "8 ЛЕТ В МАЙНИНГЕ"],
-    ["ЛОКАЦИЯ:", "СНГ / УДАЛЁННО"],
-    ["ВРЕМЯ:", timeStr],
-  ];
-
   return (
     <section
       style={{
-        minHeight: "100svh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        position: "relative",
-        overflow: "hidden",
+        maxWidth: 1160,
+        margin: "0 auto",
+        padding: "80px 24px 100px",
+        textAlign: "center",
       }}
     >
-      {/* Noise / texture overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
-          backgroundSize: "256px 256px",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
+      {/* Status badge */}
+      <div className="fade-up" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", border: `1px solid ${T.border}`, borderRadius: 999, padding: "6px 16px", marginBottom: 48 }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite", display: "inline-block" }} />
+        <span style={{ fontFamily: T.font, fontSize: 13, color: T.muted }}>Принимаю проекты · Отвечу за 2 часа</span>
+      </div>
 
-      {/* Content */}
-      <div
+      {/* Headline */}
+      <h1
+        className="fade-up fade-up-1 hero-h1"
         style={{
-          position: "relative",
-          zIndex: 1,
-          display: "grid",
-          gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-          columnGap: "10px",
-          padding: "0 10px 80px",
+          fontFamily: T.font,
+          fontSize: "clamp(52px, 8vw, 112px)",
+          fontWeight: 700,
+          lineHeight: 1.0,
+          letterSpacing: "-0.03em",
+          color: T.white,
+          marginBottom: 28,
         }}
       >
-        {/* Status rows — left col */}
-        <div
+        Майнинг,{" "}
+        <span
           style={{
-            gridColumn: "1 / -1",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            marginBottom: "40px",
+            background: `linear-gradient(135deg, ${T.cream} 0%, #e8a87c 100%)`,
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
           }}
         >
-          {rows.map(([k, v]) => (
-            <div
-              key={k}
-              style={{
-                display: "flex",
-                gap: "20px",
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                lineHeight: 1.2,
-              }}
-            >
-              <span style={{ opacity: 0.4, minWidth: "160px" }}>{k}</span>
-              <span style={{ color: S.offWhite }}>{v}</span>
+          который работает
+        </span>
+        <br />
+        с первого дня
+      </h1>
+
+      {/* Sub */}
+      <p
+        className="fade-up fade-up-2"
+        style={{
+          fontFamily: T.font,
+          fontSize: 18,
+          lineHeight: 1.65,
+          color: T.muted,
+          maxWidth: 520,
+          margin: "0 auto 52px",
+        }}
+      >
+        8 лет в крипто-инфраструктуре. Запускаю, масштабирую и оптимизирую фермы — от первого ASIC до промышленной установки.
+      </p>
+
+      {/* CTAs */}
+      <div className="fade-up fade-up-3" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 80 }}>
+        <a href={TG_URL} target="_blank" rel="noopener noreferrer" className="pill-btn pill-btn-primary" style={{ fontSize: 16 }}>
+          Получить консультацию
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </a>
+        <a href="#services" className="pill-btn pill-btn-ghost" style={{ fontSize: 16 }}>
+          Посмотреть услуги
+        </a>
+      </div>
+
+      {/* Photo + stats row */}
+      <div
+        className="fade-up fade-up-4"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center",
+          gap: 40,
+          maxWidth: 900,
+          margin: "0 auto",
+        }}
+      >
+        {/* Left stats */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "right" }}>
+          {[
+            { v: "8 лет", l: "опыта в майнинге" },
+            { v: "50+", l: "запущенных проектов" },
+          ].map((s) => (
+            <div key={s.v}>
+              <div style={{ fontFamily: T.font, fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: T.white }}>{s.v}</div>
+              <div style={{ fontFamily: T.font, fontSize: 13, color: T.muted, marginTop: 2 }}>{s.l}</div>
             </div>
           ))}
         </div>
 
-        {/* Big headline + visual split */}
-        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr auto", gap: "40px", alignItems: "flex-end" }}>
-          <div>
-            <h1
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "clamp(56px, 9vw, 120px)",
-                fontWeight: 500,
-                lineHeight: "90%",
-                letterSpacing: "-0.023em",
-                textTransform: "uppercase",
-                color: S.offWhite,
-                margin: 0,
-              }}
-            >
-              ПРЕВРАЩУ ВАШ
-              <br />
-              КАПИТАЛ В{" "}
-              <span style={{ color: S.accent }}>ХЭШРЕЙТ</span>
-            </h1>
-            <p
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                color: S.offWhite,
-                opacity: 0.5,
-                marginTop: "20px",
-                maxWidth: "400px",
-                lineHeight: 1.8,
-              }}
-            >
-              8 лет практики. Запускаю, масштабирую и оптимизирую майнинг —
-              от первой фермы до полноценной инфраструктуры.
-            </p>
-          </div>
-
-          {/* Photo */}
+        {/* Photo */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
           <div
             style={{
+              width: "clamp(180px, 22vw, 280px)",
+              height: "clamp(220px, 28vw, 340px)",
+              borderRadius: 20,
+              overflow: "hidden",
+              border: `1px solid ${T.border}`,
               position: "relative",
-              flexShrink: 0,
-              alignSelf: "flex-end",
             }}
           >
             <img
               src="/alex.jpg"
               alt="Александр Леликов — эксперт по майнингу"
               style={{
-                display: "block",
-                width: "clamp(180px, 22vw, 320px)",
-                height: "clamp(220px, 28vw, 400px)",
-                objectFit: "cover",
-                objectPosition: "center top",
-                filter: "grayscale(20%)",
-              }}
-            />
-            {/* Accent border bottom */}
-            <div style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "3px",
-              background: S.accent,
-            }} />
-            {/* Name tag */}
-            <div style={{
-              position: "absolute",
-              bottom: "12px",
-              left: "12px",
-              fontFamily: S.fontMain,
-              fontSize: "9px",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#fff",
-              background: "rgba(0,0,0,0.7)",
-              padding: "4px 8px",
-              backdropFilter: "blur(4px)",
-            }}>
-              АЛЕКСАНДР ЛЕЛИКОВ
-            </div>
-          </div>
-        </div>
-
-        {/* CTAs */}
-        <div
-          style={{
-            gridColumn: "1 / -1",
-            display: "flex",
-            gap: "10px",
-            marginTop: "40px",
-            flexWrap: "wrap",
-          }}
-        >
-          <a
-            href={TG_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "10px",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              color: "#000",
-              background: S.accent,
-              padding: "12px 28px",
-              textDecoration: "none",
-              transition: "opacity 0.2s",
-              display: "inline-block",
-              fontWeight: 500,
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            ПОЛУЧИТЬ КОНСУЛЬТАЦИЮ
-          </a>
-          <a
-            href={TG_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "10px",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              color: S.offWhite,
-              border: "1px solid rgba(232,230,227,0.3)",
-              padding: "12px 24px",
-              textDecoration: "none",
-              transition: "border-color 0.2s",
-              display: "inline-block",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(232,230,227,0.8)")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(232,230,227,0.3)")}
-          >
-            НАПИСАТЬ В TELEGRAM →
-          </a>
-        </div>
-
-        {/* Scroll indicator */}
-        <div
-          style={{
-            gridColumn: "1 / -1",
-            marginTop: "80px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            opacity: 0.3,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "10px",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-            }}
-          >
-            ПРОКРУТИТЬ
-          </span>
-          <div
-            className="animate-scroll-indicator"
-            style={{
-              width: "1px",
-              height: "24px",
-              background: "#fff",
-            }}
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Stats bar ────────────────────────────────────────────────────────────────
-function Stats() {
-  const stats = [
-    { v: "8", label: "ЛЕТ В МАЙНИНГЕ" },
-    { v: "50+", label: "ЗАПУЩЕННЫХ ПРОЕКТОВ" },
-    { v: "100+", label: "ЕДИНИЦ ОБОРУДОВАНИЯ" },
-    { v: "24/7", label: "ПОДДЕРЖКА" },
-  ];
-
-  return (
-    <section
-      style={{
-        borderTop: "1px solid rgba(255,255,255,0.08)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        display: "grid",
-        gridTemplateColumns: "repeat(2, 1fr)",
-      }}
-    >
-      {stats.map((s, i) => (
-        <div
-          key={i}
-          style={{
-            padding: "40px 20px",
-            borderRight: i % 2 === 0 ? "1px solid rgba(255,255,255,0.08)" : "none",
-            borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: S.fontMain,
-              fontSize: "clamp(30px, 4vw, 40px)",
-              fontWeight: 500,
-              letterSpacing: "-0.023em",
-              lineHeight: "90%",
-              color: S.offWhite,
-              marginBottom: "8px",
-            }}
-          >
-            {s.v}
-          </div>
-          <div
-            style={{
-              fontFamily: S.fontCond,
-              fontSize: "12px",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              opacity: 0.4,
-            }}
-          >
-            {s.label}
-          </div>
-        </div>
-      ))}
-    </section>
-  );
-}
-
-// ─── About / Why me ───────────────────────────────────────────────────────────
-function About() {
-  const items = [
-    ["01", "ПОДБОР ОБОРУДОВАНИЯ", "Получите майнер с реальной окупаемостью — без переплаты и ошибок новичка.", "M9 3H15M9 3C9 3 3 5 3 12C3 19 9 21 12 21C15 21 21 19 21 12C21 5 15 3 15 3M9 3C9 3 12 5 12 12M15 3C15 3 12 5 12 12M12 12V21"],
-    ["02", "РАСЧЁТ ДОХОДНОСТИ", "Узнаете точную прибыль до покупки — с учётом курса, сложности и вашего тарифа.", "M9 19V13M12 19V7M15 19V11M5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3Z"],
-    ["03", "НАСТРОЙКА И ЗАПУСК", "Ферма запускается за 1–3 дня и с первого дня приносит доход.", "M13 10V3L4 14H11V21L20 10H13Z"],
-    ["04", "ОПТИМИЗАЦИЯ ЗАТРАТ", "Снизите расходы на электричество на 15–30% без потери мощности.", "M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93"],
-    ["05", "МАСШТАБИРОВАНИЕ", "Вырастете от одного ASIC до промышленной фермы по чёткому плану.", "M2 20H22M4 20V10L12 4L20 10V20M10 20V14H14V20"],
-    ["06", "УДАЛЁННОЕ УПРАВЛЕНИЕ", "Ферма работает сама — вы видите статус и доход из любой точки мира.", "M1.42 9C5.06 5.36 10.24 3.5 12 3.5C13.76 3.5 18.94 5.36 22.58 9M5.41 13C7.74 10.67 10.25 9.5 12 9.5C13.75 9.5 16.26 10.67 18.59 13M12 17.5H12.01M9 21L12 17.5L15 21"],
-    ["07", "ПОДБОР ПОМЕЩЕНИЙ", "Найдёте площадку с низким тарифом и правильным охлаждением с первого раза.", "M3 9L12 2L21 9V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9Z"],
-    ["08", "ИНВЕСТИЦИОННАЯ СТРАТЕГИЯ", "Войдёте в рынок в правильный момент и избежите типичных потерь.", "M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"],
-  ];
-
-  return (
-    <section
-      id="about"
-      style={{
-        padding: "80px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      {/* Section header */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-          columnGap: "10px",
-          padding: "0 10px",
-          marginBottom: "60px",
-        }}
-      >
-        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div>
-            <div
-              style={{
-                fontFamily: S.fontCond,
-                fontSize: "12px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                opacity: 0.4,
-                marginBottom: "12px",
-              }}
-            >
-              ЧЕМ ПОМОГАЮ
-            </div>
-            <h2
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "clamp(28px, 4vw, 40px)",
-                fontWeight: 500,
-                letterSpacing: "-0.023em",
-                lineHeight: "90%",
-                textTransform: "uppercase",
-                color: S.offWhite,
-                margin: 0,
-              }}
-            >
-              8 ЛЕТ В МАЙНИНГЕ.
-              <br />
-              ЗНАЮ КАК ЗАРАБОТАТЬ.
-            </h2>
-          </div>
-          {/* Alex photo — about section */}
-          <div
-            style={{
-              flexShrink: 0,
-              width: "160px",
-              height: "200px",
-              overflow: "hidden",
-              borderBottom: `3px solid ${S.accent}`,
-            }}
-          >
-            <img
-              src="/alex.jpg"
-              alt="Alex"
-              style={{
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
                 objectPosition: "center top",
-                filter: "grayscale(20%)",
+                filter: "grayscale(15%)",
                 display: "block",
               }}
             />
+            {/* Cream bottom gradient accent */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 4,
+                background: `linear-gradient(90deg, ${T.cream}, #e8a87c)`,
+              }}
+            />
+          </div>
+          {/* Name badge */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: -16,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: T.bgCard,
+              border: `1px solid ${T.border}`,
+              borderRadius: 999,
+              padding: "6px 18px",
+              whiteSpace: "nowrap",
+              fontFamily: T.font,
+              fontSize: 13,
+              fontWeight: 500,
+              color: T.white,
+            }}
+          >
+            Александр Леликов
           </div>
         </div>
-      </div>
 
-      {/* Items list */}
-      <div style={{ padding: "0 10px" }}>
-        {items.map(([num, title, desc, iconPath]) => (
-          <div
-            key={num}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "36px 36px 1fr 1fr",
-              columnGap: "10px",
-              padding: "20px 0",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-              alignItems: "center",
-              transition: "opacity 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <span
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                opacity: 0.3,
-              }}
-            >
-              {num}
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={S.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.8, flexShrink: 0 }}>
-              <path d={iconPath} />
-            </svg>
-            <span
-              style={{
-                fontFamily: S.fontCond,
-                fontSize: "12px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                color: S.offWhite,
-              }}
-            >
-              {title}
-            </span>
-            <span
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                lineHeight: 1.8,
-                opacity: 0.5,
-                maxWidth: "320px",
-              }}
-            >
-              {desc}
-            </span>
-          </div>
-        ))}
+        {/* Right stats */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "left" }}>
+          {[
+            { v: "100+", l: "единиц оборудования" },
+            { v: "24/7", l: "поддержка клиентов" },
+          ].map((s) => (
+            <div key={s.v}>
+              <div style={{ fontFamily: T.font, fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: T.white }}>{s.v}</div>
+              <div style={{ fontFamily: T.font, fontSize: 13, color: T.muted, marginTop: 2 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-// ─── Services ─────────────────────────────────────────────────────────────────
-function Services() {
-  const svcs = [
-    {
-      code: "01",
-      title: "КОНСУЛЬТАЦИЯ\nПО МАЙНИНГУ",
-      price: "ОТ $100",
-      desc: "Разберём вашу ситуацию, подберём оборудование и составим план старта под ваш бюджет и цели.",
-    },
-    {
-      code: "02",
-      title: "МАЙНИНГ\nПОД КЛЮЧ",
-      price: "ИНДИВИДУАЛЬНО",
-      desc: "Подбор оборудования, доставка, настройка, запуск и дальнейшее сопровождение. Занимаюсь всем.",
-    },
-    {
-      code: "03",
-      title: "АУДИТ\nИ ОПТИМИЗАЦИЯ",
-      price: "ОТ $300",
-      desc: "Повышение эффективности существующих ферм. Нахожу точки роста и устраняю потери.",
-    },
-    {
-      code: "04",
-      title: "СОПРОВОЖДЕНИЕ\nИНВЕСТОРОВ",
-      price: "ПО ДОГОВОРЁННОСТИ",
-      desc: "Помощь в выборе стратегии и расчёте доходности для тех, кто рассматривает майнинг как инвестицию.",
-    },
-  ];
+// ─── Services ──────────────────────────────────────────────────────────────────
+const SERVICES = [
+  {
+    icon: "M9 3H15M9 3C9 3 3 5 3 12C3 19 9 21 12 21C15 21 21 19 21 12C21 5 15 3 15 3M9 3C9 3 12 5 12 12M15 3C15 3 12 5 12 12M12 12V21",
+    title: "Консультация по майнингу",
+    price: "от $100",
+    desc: "Разберём вашу ситуацию, подберём оборудование и составим план старта под ваш бюджет и цели. 60–90 минут.",
+  },
+  {
+    icon: "M13 10V3L4 14H11V21L20 10H13Z",
+    title: "Майнинг под ключ",
+    price: "индивидуально",
+    desc: "Подбор оборудования, доставка, настройка, запуск и дальнейшее сопровождение. Ферма работает с первого дня.",
+  },
+  {
+    icon: "M9 19V13M12 19V7M15 19V11M5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3Z",
+    title: "Аудит и оптимизация",
+    price: "от $300",
+    desc: "Повышение эффективности существующих ферм. Нахожу потери до $1000+/мес и устраняю их в первый месяц.",
+  },
+  {
+    icon: "M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z",
+    title: "Сопровождение инвесторов",
+    price: "по договорённости",
+    desc: "Помощь в выборе стратегии и расчёте доходности для тех, кто рассматривает майнинг как инвестицию.",
+  },
+];
 
+function Services() {
   return (
-    <section
-      id="services"
-      style={{
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "40px 10px 0",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          paddingBottom: "20px",
-        }}
-      >
-        <div
+    <section id="services" style={{ maxWidth: 1160, margin: "0 auto", padding: "80px 24px" }}>
+      {/* Section label */}
+      <div style={{ marginBottom: 48 }}>
+        <span style={{ fontFamily: T.font, fontSize: 13, color: T.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Услуги</span>
+        <h2
           style={{
-            fontFamily: S.fontCond,
-            fontSize: "12px",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            opacity: 0.4,
+            fontFamily: T.font,
+            fontSize: "clamp(36px, 5vw, 64px)",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.08,
+            color: T.white,
+            marginTop: 12,
           }}
         >
-          УСЛУГИ
-        </div>
-        <div
-          style={{
-            fontFamily: S.fontMain,
-            fontSize: "10px",
-            letterSpacing: "0.05em",
-            opacity: 0.4,
-          }}
-        >
-          04 НАПРАВЛЕНИЯ
-        </div>
+          Чем могу помочь
+        </h2>
       </div>
 
-      {/* Cards grid */}
       <div
+        className="two-col"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
         }}
       >
-        {svcs.map((s, i) => (
+        {SERVICES.map((s, i) => (
           <a
             key={i}
             href={TG_URL}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: "block",
-              padding: "40px 20px",
-              borderRight: i % 2 === 0 ? "1px solid rgba(255,255,255,0.08)" : "none",
-              borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none",
-              textDecoration: "none",
-              color: "inherit",
-              transition: "background 0.2s",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            className="card"
+            style={{ padding: "32px 28px", textDecoration: "none", color: "inherit", display: "block" }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "24px" }}>
-              <span
-                style={{
-                  fontFamily: S.fontMain,
-                  fontSize: "10px",
-                  letterSpacing: "0.05em",
-                  opacity: 0.3,
-                }}
-              >
-                {s.code}
-              </span>
-              <span
-                style={{
-                  fontFamily: S.fontCond,
-                  fontSize: "12px",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  color: S.offWhite,
-                  opacity: 0.7,
-                }}
-              >
-                {s.price}
-              </span>
-            </div>
-            <h3
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "clamp(20px, 2.5vw, 30px)",
-                fontWeight: 500,
-                letterSpacing: "-0.023em",
-                lineHeight: "90%",
-                textTransform: "uppercase",
-                color: S.offWhite,
-                whiteSpace: "pre-line",
-                marginBottom: "16px",
-              }}
-            >
-              {s.title}
-            </h3>
-            <p
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                lineHeight: 1.8,
-                opacity: 0.5,
-                maxWidth: "320px",
-              }}
-            >
-              {s.desc}
-            </p>
+            {/* Icon */}
             <div
               style={{
-                marginTop: "24px",
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                opacity: 0.4,
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: `rgba(255,234,223,0.1)`,
+                border: `1px solid rgba(255,234,223,0.15)`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 20,
               }}
             >
-              УЗНАТЬ ПОДРОБНЕЕ →
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={T.cream} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d={s.icon} />
+              </svg>
+            </div>
+
+            {/* Price tag */}
+            <div style={{ fontFamily: T.font, fontSize: 12, color: T.cream, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{s.price}</div>
+
+            <h3 style={{ fontFamily: T.font, fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", color: T.white, marginBottom: 12, lineHeight: 1.2 }}>
+              {s.title}
+            </h3>
+
+            <p style={{ fontFamily: T.font, fontSize: 15, color: T.muted, lineHeight: 1.65 }}>{s.desc}</p>
+
+            <div style={{ marginTop: 24, fontFamily: T.font, fontSize: 14, color: T.creamDim, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+              Узнать подробнее
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
             </div>
           </a>
         ))}
@@ -924,116 +554,141 @@ function Services() {
   );
 }
 
-// ─── Prices ───────────────────────────────────────────────────────────────────
-function Prices() {
-  const rows = [
-    { svc: "КОНСУЛЬТАЦИЯ", price: "ОТ $100", note: "60–90 МИН — СЭКОНОМИТ $500+ НА ОШИБКАХ НОВИЧКА" },
-    { svc: "ЗАПУСК ПОД КЛЮЧ", price: "ИНДИВИДУАЛЬНО", note: "ФЕРМА РАБОТАЕТ ЗА 1–3 ДНЯ, ДОХОД С ПЕРВОГО ДНЯ" },
-    { svc: "АУДИТ ФЕРМЫ", price: "ОТ $300", note: "НАХОДИТ ПОТЕРИ ДО $1000+/МЕС — ОКУПАЕТСЯ В ПЕРВЫЙ МЕСЯЦ" },
-    { svc: "ПОЛНОЕ СОПРОВОЖДЕНИЕ", price: "ПО ДОГОВОРЁННОСТИ", note: "ФЕРМА РАСТЁТ БЕЗ ВАШЕГО УЧАСТИЯ — ВЫ ПОЛУЧАЕТЕ ПРИБЫЛЬ" },
-  ];
+// ─── About / What I do ────────────────────────────────────────────────────────
+const SKILLS = [
+  { n: "01", title: "Подбор оборудования", desc: "Получите майнер с реальной окупаемостью — без переплаты." },
+  { n: "02", title: "Расчёт доходности", desc: "Точная прибыль до покупки — с учётом курса, сложности и тарифа." },
+  { n: "03", title: "Настройка и запуск", desc: "Ферма запускается за 1–3 дня и с первого дня приносит доход." },
+  { n: "04", title: "Оптимизация затрат", desc: "Снижу расходы на электричество на 15–30% без потери мощности." },
+  { n: "05", title: "Масштабирование", desc: "От одного ASIC до промышленной фермы по чёткому плану." },
+  { n: "06", title: "Удалённое управление", desc: "Ферма работает сама — вы видите статус и доход из любой точки." },
+];
 
+function About() {
   return (
-    <section
-      id="prices"
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "40px 10px 20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
+    <section id="about" style={{ background: T.bgCard, borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
+      <div style={{ maxWidth: 1160, margin: "0 auto", padding: "80px 24px" }}>
         <div
-          style={{
-            fontFamily: S.fontCond,
-            fontSize: "12px",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            opacity: 0.4,
-          }}
+          className="two-col"
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}
         >
-          СТОИМОСТЬ
-        </div>
-        <div
-          style={{
-            fontFamily: S.fontMain,
-            fontSize: "10px",
-            letterSpacing: "0.05em",
-            opacity: 0.4,
-          }}
-        >
-          ЦЕНА ОБСУЖДАЕТСЯ НА ЗВОНКЕ
-        </div>
-      </div>
-
-      {/* Rows */}
-      <div>
-        {rows.map((r, i) => (
-          <div
-            key={i}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr auto",
-              alignItems: "center",
-              padding: "24px 10px",
-              borderBottom: i < rows.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
-              gap: "20px",
-              transition: "opacity 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <div>
-              <div
-                style={{
-                  fontFamily: S.fontCond,
-                  fontSize: "12px",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  color: S.offWhite,
-                  marginBottom: "4px",
-                }}
-              >
-                {r.svc}
-              </div>
-              <div
-                style={{
-                  fontFamily: S.fontMain,
-                  fontSize: "10px",
-                  letterSpacing: "0.05em",
-                  opacity: 0.4,
-                }}
-              >
-                {r.note}
-              </div>
-            </div>
-            <div
+          {/* Left */}
+          <div>
+            <span style={{ fontFamily: T.font, fontSize: 13, color: T.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>О подходе</span>
+            <h2
               style={{
-                fontFamily: S.fontMain,
-                fontSize: "clamp(16px, 2vw, 20px)",
-                fontWeight: 500,
-                letterSpacing: "-0.023em",
-                lineHeight: "90%",
-                color: S.offWhite,
-                textAlign: "right",
-                whiteSpace: "nowrap",
+                fontFamily: T.font,
+                fontSize: "clamp(32px, 4vw, 52px)",
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
+                color: T.white,
+                marginTop: 12,
+                marginBottom: 28,
               }}
             >
-              {r.price}
-            </div>
+              8 лет в майнинге.
+              <br />
+              <span style={{ color: T.cream }}>Знаю как заработать.</span>
+            </h2>
+            <p style={{ fontFamily: T.font, fontSize: 16, color: T.muted, lineHeight: 1.7, marginBottom: 36 }}>
+              Работаю с клиентами по СНГ и за рубежом. Помогаю как начинающим инвесторам, так и тем, кто уже имеет фермы и хочет их оптимизировать.
+            </p>
+            <a href={TG_URL} target="_blank" rel="noopener noreferrer" className="pill-btn pill-btn-primary" style={{ fontSize: 15 }}>
+              Бесплатный расчёт ROI
+            </a>
           </div>
-        ))}
+
+          {/* Right — skill list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {SKILLS.map((sk, i) => (
+              <div
+                key={sk.n}
+                style={{
+                  padding: "20px 0",
+                  borderBottom: i < SKILLS.length - 1 ? `1px solid ${T.border}` : "none",
+                  display: "flex",
+                  gap: 20,
+                  alignItems: "flex-start",
+                }}
+              >
+                <span style={{ fontFamily: T.font, fontSize: 12, color: T.muted, minWidth: 28, paddingTop: 3 }}>{sk.n}</span>
+                <div>
+                  <div style={{ fontFamily: T.font, fontSize: 16, fontWeight: 600, color: T.white, marginBottom: 4 }}>{sk.title}</div>
+                  <div style={{ fontFamily: T.font, fontSize: 14, color: T.muted, lineHeight: 1.6 }}>{sk.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-// ─── Contact ──────────────────────────────────────────────────────────────────
+// ─── Prices ────────────────────────────────────────────────────────────────────
+const PRICES = [
+  { svc: "Консультация", price: "от $100", note: "60–90 мин — сэкономит $500+ на ошибках новичка" },
+  { svc: "Майнинг под ключ", price: "индивидуально", note: "Ферма работает за 1–3 дня, доход с первого дня" },
+  { svc: "Аудит фермы", price: "от $300", note: "Находит потери до $1000+/мес — окупается в первый месяц" },
+  { svc: "Полное сопровождение", price: "по договорённости", note: "Ферма растёт без вашего участия — вы получаете прибыль" },
+];
+
+function Prices() {
+  return (
+    <section id="prices" style={{ maxWidth: 1160, margin: "0 auto", padding: "80px 24px" }}>
+      <div style={{ marginBottom: 48 }}>
+        <span style={{ fontFamily: T.font, fontSize: 13, color: T.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Стоимость</span>
+        <h2
+          style={{
+            fontFamily: T.font,
+            fontSize: "clamp(36px, 5vw, 64px)",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.08,
+            color: T.white,
+            marginTop: 12,
+          }}
+        >
+          Прозрачные цены
+        </h2>
+      </div>
+
+      <div className="card" style={{ overflow: "hidden" }}>
+        {PRICES.map((r, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "24px 28px",
+              borderBottom: i < PRICES.length - 1 ? `1px solid ${T.border}` : "none",
+              gap: 20,
+              flexWrap: "wrap",
+              transition: "background 0.18s",
+              cursor: "default",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = T.bgCardHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <div>
+              <div style={{ fontFamily: T.font, fontSize: 17, fontWeight: 600, color: T.white, marginBottom: 4 }}>{r.svc}</div>
+              <div style={{ fontFamily: T.font, fontSize: 13, color: T.muted }}>{r.note}</div>
+            </div>
+            <div style={{ fontFamily: T.font, fontSize: 18, fontWeight: 700, color: T.cream, whiteSpace: "nowrap" }}>{r.price}</div>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ fontFamily: T.font, fontSize: 14, color: T.muted, marginTop: 20, textAlign: "center" }}>
+        Точная цена обсуждается на звонке — бесплатно посчитаю ROI прямо в переписке
+      </p>
+    </section>
+  );
+}
+
+// ─── Contact ────────────────────────────────────────────────────────────────────
 function Contact() {
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -1050,348 +705,164 @@ function Contact() {
       if (res.ok) {
         setStatus("sent");
         setForm({ name: "", contact: "", message: "" });
-      } else {
-        setStatus("error");
-      }
+      } else setStatus("error");
     } catch {
       setStatus("error");
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    background: "transparent",
-    border: "none",
-    borderBottom: "1px solid rgba(255,255,255,0.2)",
-    color: S.offWhite,
-    fontFamily: S.fontMain,
-    fontSize: "13px",
-    letterSpacing: "0.03em",
-    padding: "12px 0",
-    outline: "none",
-    width: "100%",
-    transition: "border-color 0.2s",
-  };
-
   return (
-    <section
-      id="contact"
-      style={{
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "40px 10px 20px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
+    <section id="contact" style={{ background: T.bgCard, borderTop: `1px solid ${T.border}` }}>
+      <div style={{ maxWidth: 1160, margin: "0 auto", padding: "80px 24px" }}>
         <div
-          style={{
-            fontFamily: S.fontCond,
-            fontSize: "12px",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            opacity: 0.4,
-            marginBottom: "12px",
-          }}
+          className="two-col"
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}
         >
-          КОНТАКТ
-        </div>
-        <h2
-          style={{
-            fontFamily: S.fontMain,
-            fontSize: "clamp(36px, 6vw, 80px)",
-            fontWeight: 500,
-            letterSpacing: "-0.023em",
-            lineHeight: "90%",
-            textTransform: "uppercase",
-            color: S.offWhite,
-            margin: 0,
-          }}
-        >
-          НАЧНИТЕ
-          <br />
-          ЗДЕСЬ
-        </h2>
-      </div>
-
-      {/* Two columns */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          borderTop: "none",
-        }}
-      >
-        {/* Left — direct contacts */}
-        <div
-          style={{
-            padding: "40px 20px 40px 10px",
-            borderRight: "1px solid rgba(255,255,255,0.08)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
+          {/* Left */}
           <div>
-            <p
+            <span style={{ fontFamily: T.font, fontSize: 13, color: T.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Контакт</span>
+            <h2
               style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                opacity: 0.5,
-                lineHeight: 1.8,
-                marginBottom: "40px",
-                maxWidth: "280px",
+                fontFamily: T.font,
+                fontSize: "clamp(36px, 5vw, 64px)",
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.08,
+                color: T.white,
+                marginTop: 12,
+                marginBottom: 24,
               }}
             >
-              НАПИШИТЕ МНЕ НАПРЯМУЮ ИЛИ ЗАПОЛНИТЕ ФОРМУ — ОТВЕЧУ ЛИЧНО В ТЕЧЕНИЕ 2 ЧАСОВ.
+              Начните
+              <br />
+              <span style={{ color: T.cream }}>здесь</span>
+            </h2>
+            <p style={{ fontFamily: T.font, fontSize: 16, color: T.muted, lineHeight: 1.7, marginBottom: 36, maxWidth: 360 }}>
+              Напишите напрямую или заполните форму — отвечу лично в течение 2 часов и бесплатно посчитаю ROI.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <a
-                href={TG_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  gap: "16px",
-                  fontFamily: S.fontMain,
-                  fontSize: "10px",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  textDecoration: "none",
-                  color: S.offWhite,
-                  transition: "opacity 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.6")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-              >
-                <span style={{ opacity: 0.4, minWidth: "80px" }}>TELEGRAM</span>
-                <span>@ALEX_MIMINGOV</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Right — form */}
-        <div style={{ padding: "40px 10px 40px 20px" }}>
-          {status === "sent" ? (
-            <div
-              style={{
-                fontFamily: S.fontMain,
-                fontSize: "10px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                color: S.offWhite,
-                lineHeight: 1.8,
-              }}
+            <a
+              href={TG_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pill-btn pill-btn-ghost"
+              style={{ fontSize: 15 }}
             >
-              <div style={{ marginBottom: "8px" }}>ЗАЯВКА ПОЛУЧЕНА.</div>
-              <div style={{ opacity: 0.4 }}>ОТВЕЧУ ЛИЧНО В ТЕЧЕНИЕ 2 ЧАСОВ.<br />УЖЕ В ПЕРЕПИСКЕ БЕСПЛАТНО ПОСЧИТАЮ ROI ВАШЕЙ ИДЕИ.</div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div>
-                <div
-                  style={{
-                    fontFamily: S.fontCond,
-                    fontSize: "10px",
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    opacity: 0.4,
-                    marginBottom: "8px",
-                  }}
-                >
-                  ИМЯ
+              <svg width={18} height={18} viewBox="0 0 24 24" fill={T.cream}>
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.288c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.396 4.52 13.49c-.65-.204-.664-.65.136-.963l10.879-4.194c.537-.194 1.009.135.027.915z" />
+              </svg>
+              @Alex_mimingov
+            </a>
+          </div>
+
+          {/* Right — form */}
+          <div>
+            {status === "sent" ? (
+              <div className="card" style={{ padding: "40px 28px", textAlign: "center" }}>
+                <div style={{ fontFamily: T.font, fontSize: 40, marginBottom: 16 }}>✓</div>
+                <div style={{ fontFamily: T.font, fontSize: 18, fontWeight: 600, color: T.white, marginBottom: 8 }}>Заявка получена</div>
+                <div style={{ fontFamily: T.font, fontSize: 15, color: T.muted, lineHeight: 1.6 }}>
+                  Отвечу лично в течение 2 часов.<br />
+                  В переписке бесплатно посчитаю ROI вашей идеи.
                 </div>
-                <input
-                  type="text"
-                  placeholder="Ваше имя"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                  style={inputStyle}
-                  onFocus={(e) => (e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.7)")}
-                  onBlur={(e) => (e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.2)")}
-                />
               </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily: S.fontCond,
-                    fontSize: "10px",
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    opacity: 0.4,
-                    marginBottom: "8px",
-                  }}
-                >
-                  TELEGRAM / ТЕЛЕФОН
+            ) : (
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div>
+                  <label style={{ fontFamily: T.font, fontSize: 13, color: T.muted, display: "block", marginBottom: 8 }}>Имя</label>
+                  <input
+                    type="text"
+                    placeholder="Ваше имя"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="@username или +7..."
-                  value={form.contact}
-                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                  required
-                  style={inputStyle}
-                  onFocus={(e) => (e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.7)")}
-                  onBlur={(e) => (e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.2)")}
-                />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily: S.fontCond,
-                    fontSize: "10px",
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    opacity: 0.4,
-                    marginBottom: "8px",
-                  }}
-                >
-                  СООБЩЕНИЕ
+                <div>
+                  <label style={{ fontFamily: T.font, fontSize: 13, color: T.muted, display: "block", marginBottom: 8 }}>Telegram / телефон</label>
+                  <input
+                    type="text"
+                    placeholder="@username или +7..."
+                    value={form.contact}
+                    onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                    required
+                  />
                 </div>
-                <textarea
-                  rows={4}
-                  placeholder="Опишите кратко вашу задачу..."
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  required
-                  style={{
-                    ...inputStyle,
-                    resize: "none",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.7)")}
-                  onBlur={(e) => (e.currentTarget.style.borderBottomColor = "rgba(255,255,255,0.2)")}
-                />
-              </div>
-              <div>
+                <div>
+                  <label style={{ fontFamily: T.font, fontSize: 13, color: T.muted, display: "block", marginBottom: 8 }}>Сообщение</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Опишите кратко вашу задачу..."
+                    value={form.message}
+                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    required
+                    style={{ resize: "none" }}
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={status === "sending"}
-                  style={{
-                    fontFamily: S.fontMain,
-                    fontSize: "10px",
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    color: "#000",
-                    background: S.offWhite,
-                    padding: "12px 24px",
-                    border: "none",
-                    cursor: status === "sending" ? "wait" : "pointer",
-                    opacity: status === "sending" ? 0.6 : 1,
-                    transition: "opacity 0.2s",
-                  }}
-                  onMouseEnter={(e) => { if (status !== "sending") e.currentTarget.style.opacity = "0.8"; }}
-                  onMouseLeave={(e) => { if (status !== "sending") e.currentTarget.style.opacity = "1"; }}
+                  className="pill-btn pill-btn-primary"
+                  style={{ fontSize: 16, justifyContent: "center", opacity: status === "sending" ? 0.6 : 1 }}
                 >
-                  {status === "sending" ? "ОТПРАВКА..." : "ОТПРАВИТЬ →"}
+                  {status === "sending" ? "Отправка..." : "Отправить →"}
                 </button>
                 {status === "error" && (
-                  <p
-                    style={{
-                      fontFamily: S.fontMain,
-                      fontSize: "10px",
-                      letterSpacing: "0.05em",
-                      color: "#ff4444",
-                      marginTop: "8px",
-                    }}
-                  >
-                    ОШИБКА. НАПИШИТЕ НАПРЯМУЮ В TELEGRAM.
+                  <p style={{ fontFamily: T.font, fontSize: 13, color: "#f87171", marginTop: 4 }}>
+                    Ошибка. Напишите напрямую в Telegram.
                   </p>
                 )}
-                <p
-                  style={{
-                    fontFamily: S.fontMain,
-                    fontSize: "10px",
-                    letterSpacing: "0.05em",
-                    opacity: 0.4,
-                    marginTop: "16px",
-                    lineHeight: 1.8,
-                    maxWidth: "280px",
-                  }}
-                >
-                  ОТВЕЧУ ЛИЧНО В ТЕЧЕНИЕ 2 ЧАСОВ — И БЕСПЛАТНО ПОСЧИТАЮ ROI ВАШЕЙ ИДЕИ ПРЯМО В ПЕРЕПИСКЕ.
-                </p>
-              </div>
-            </form>
-          )}
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// ─── Footer ────────────────────────────────────────────────────────────────────
 function Footer() {
   return (
     <footer
       style={{
-        padding: "20px 10px",
+        borderTop: `1px solid ${T.border}`,
+        padding: "28px 24px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         flexWrap: "wrap",
-        gap: "10px",
+        gap: 12,
+        maxWidth: 1160,
+        margin: "0 auto",
       }}
     >
-      <span
-        style={{
-          fontFamily: S.fontMain,
-          fontSize: "10px",
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          opacity: 0.4,
-        }}
-      >
-        © {new Date().getFullYear()} ЛЕЛИКОВ АЛЕКСАНДР
-      </span>
-      <span
-        style={{
-          fontFamily: S.fontMain,
-          fontSize: "10px",
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          opacity: 0.4,
-        }}
-      >
-        МАЙНИНГ-ЭКСПЕРТ
+      <span style={{ fontFamily: T.font, fontSize: 14, color: T.muted }}>
+        © {new Date().getFullYear()} Леликов Александр — Майнинг-эксперт
       </span>
       <a
         href={TG_URL}
         target="_blank"
         rel="noopener noreferrer"
-        style={{
-          fontFamily: S.fontMain,
-          fontSize: "10px",
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          color: S.offWhite,
-          textDecoration: "none",
-          opacity: 0.4,
-          transition: "opacity 0.2s",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-        onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.4")}
+        style={{ fontFamily: T.font, fontSize: 14, color: T.muted, textDecoration: "none", transition: "color 0.18s" }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = T.white)}
+        onMouseLeave={(e) => (e.currentTarget.style.color = T.muted)}
       >
-        @ALEX_MIMINGOV
+        @Alex_mimingov
       </a>
     </footer>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ──────────────────────────────────────────────────────────────────────
 export default function Index() {
   return (
-    <div style={{ background: "#000", minHeight: "100vh", color: "#fff" }}>
+    <div style={{ background: T.bg, minHeight: "100vh", color: T.white }}>
+      <style>{GLOBAL_CSS}</style>
       <Header />
-      <CryptoTicker />
+      <Ticker />
       <Hero />
-      <Stats />
-      <About />
       <Services />
+      <About />
       <Prices />
       <Contact />
       <Footer />
