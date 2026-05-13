@@ -415,32 +415,50 @@ function Hero() {
             </p>
           </div>
 
-          {/* Mining rig visual */}
+          {/* Photo */}
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "6px",
-              opacity: 0.15,
-              alignSelf: "center",
+              position: "relative",
               flexShrink: 0,
+              alignSelf: "flex-end",
             }}
           >
-            {[...Array(6)].map((_, i) => (
-              <div key={i} style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                <div style={{ width: "48px", height: "14px", border: "1px solid #fff", borderRadius: "2px", position: "relative", overflow: "hidden" }}>
-                  <div style={{
-                    position: "absolute", left: 0, top: 0, bottom: 0,
-                    width: `${55 + (i * 7) % 40}%`,
-                    background: S.accent,
-                    opacity: 0.6,
-                  }} />
-                </div>
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: i % 3 === 0 ? S.accent : "#fff", opacity: 0.8 }} />
-              </div>
-            ))}
-            <div style={{ fontFamily: S.fontMain, fontSize: "8px", letterSpacing: "0.1em", color: "#fff", opacity: 0.6, marginTop: "4px" }}>
-              HASHRATE ████████░░ 84%
+            <img
+              src="/alex.jpg"
+              alt="Александр Леликов — эксперт по майнингу"
+              style={{
+                display: "block",
+                width: "clamp(180px, 22vw, 320px)",
+                height: "clamp(220px, 28vw, 400px)",
+                objectFit: "cover",
+                objectPosition: "center top",
+                filter: "grayscale(20%)",
+              }}
+            />
+            {/* Accent border bottom */}
+            <div style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: S.accent,
+            }} />
+            {/* Name tag */}
+            <div style={{
+              position: "absolute",
+              bottom: "12px",
+              left: "12px",
+              fontFamily: S.fontMain,
+              fontSize: "9px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#fff",
+              background: "rgba(0,0,0,0.7)",
+              padding: "4px 8px",
+              backdropFilter: "blur(4px)",
+            }}>
+              АЛЕКСАНДР ЛЕЛИКОВ
             </div>
           </div>
         </div>
@@ -653,6 +671,29 @@ function About() {
               <br />
               ЗНАЮ КАК ЗАРАБОТАТЬ.
             </h2>
+          </div>
+          {/* Alex photo — about section */}
+          <div
+            style={{
+              flexShrink: 0,
+              width: "160px",
+              height: "200px",
+              overflow: "hidden",
+              borderBottom: `3px solid ${S.accent}`,
+            }}
+          >
+            <img
+              src="/alex.jpg"
+              alt="Alex"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center top",
+                filter: "grayscale(20%)",
+                display: "block",
+              }}
+            />
           </div>
         </div>
       </div>
